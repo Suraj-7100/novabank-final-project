@@ -1,0 +1,25 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: bankadmin
+      POSTGRES_PASSWORD: localpass
+      POSTGRES_DB: bank
+    ports: ["5432:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bankadmin -d bank"]
+      interval: 3s
+      retries: 20
+  api:
+    build: .
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      DB_HOST: db
+      DB_USER: bankadmin
+      DB_PASSWORD: localpass
+      DB_NAME: bank
+      DB_SSLMODE: disable
+      JWT_SECRET: local-dev-secret-change-me-0123456789abcdef
+      CORS_ORIGIN: http://127.0.0.1:5500
+    ports: ["8080:8080"]

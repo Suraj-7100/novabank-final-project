@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>NovaBank – money that moves in real time</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E⚡%3C/text%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#070916;--ink:#e9efff;--mut:#8d97bf;--sig:#3ee8ff;--uv:#8a6bff;--ok:#38e8a8;--bad:#ff6b8a;--line:rgba(160,180,255,.14);--glass:rgba(18,22,52,.55)}
+*{box-sizing:border-box;margin:0}
+body{font:15px/1.55 Sora,system-ui,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;overflow-x:hidden}
+body:before{content:"";position:fixed;inset:0;z-index:-2;background:radial-gradient(55vmax 45vmax at 12% 8%,rgba(138,107,255,.28),transparent 60%),radial-gradient(50vmax 40vmax at 92% 90%,rgba(62,232,255,.2),transparent 60%);animation:drift 18s ease-in-out infinite alternate}
+body:after{content:"";position:fixed;inset:0;z-index:-1;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:56px 56px;mask-image:radial-gradient(70% 60% at 50% 30%,#000,transparent);opacity:.5}
+@keyframes drift{to{transform:translate3d(-2%,3%,0) scale(1.08)}}
+button,input{font:inherit;color:inherit}
+.mono{font-family:'IBM Plex Mono',ui-monospace,monospace}.mut{color:var(--mut)}
+.glass{background:var(--glass);border:1px solid var(--line);border-radius:22px;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.btn{border:0;border-radius:14px;padding:12px 18px;font-weight:600;cursor:pointer;color:#04101a;background:linear-gradient(120deg,var(--sig),var(--uv));transition:transform .15s,box-shadow .2s}
+.btn:hover{box-shadow:0 0 28px rgba(62,232,255,.35)}.btn:active{transform:scale(.97)}
+.btn.ghost{background:rgba(255,255,255,.06);color:var(--ink);border:1px solid var(--line)}
+.btn.ghost:hover{box-shadow:none;border-color:var(--sig)}
+:focus-visible{outline:2px solid var(--sig);outline-offset:2px}
+label{display:block;font-size:13px;color:var(--mut);margin-bottom:14px}
+input{width:100%;margin-top:6px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:rgba(5,8,24,.6)}
+input:focus{outline:0;border-color:var(--sig);box-shadow:0 0 0 3px rgba(62,232,255,.15)}
+.pre{display:flex;align-items:center;margin-top:6px;border:1px solid var(--line);border-radius:12px;background:rgba(5,8,24,.6);padding-left:14px}
+.pre input{border:0;margin:0;background:none;box-shadow:none!important}
+.err{color:var(--bad);min-height:20px;font-size:13px;margin-top:8px}
+/* auth */
+.auth{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(320px,.9fr);gap:clamp(20px,3vw,48px);align-items:center;width:100%;max-width:1180px;margin:0 auto;padding:32px 24px;min-height:100svh}
+.auth>*{min-width:0}
+.logo{font-weight:700;font-size:18px;letter-spacing:.02em}
+.hero h1{font-size:clamp(32px,3.5vw,58px);line-height:1.05;margin:28px 0 16px;font-weight:700}
+.auth .card{width:100%;max-width:440px;justify-self:end}
+.auth .ticker{max-width:100%}
+.hero h1 span{background:linear-gradient(110deg,var(--sig),var(--uv));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{max-width:44ch}
+.ticker{margin-top:36px;overflow:hidden;border:1px solid var(--line);border-radius:14px;padding:10px 0;mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
+.ticker div{display:flex;gap:40px;width:max-content;animation:tick 28s linear infinite;font-size:13px;color:var(--mut)}
+.ticker b{color:var(--ok);font-weight:500}
+@keyframes tick{to{transform:translateX(-50%)}}
+.card{padding:28px}.tabs{display:flex;gap:6px;background:rgba(255,255,255,.05);padding:5px;border-radius:14px;margin-bottom:22px}
+.tabs button{flex:1;border:0;background:none;padding:9px;border-radius:10px;cursor:pointer;color:var(--mut);font-weight:600}
+.tabs button.on{background:rgba(255,255,255,.1);color:var(--ink)}
+.steps{display:flex;gap:8px;margin-bottom:20px}.steps i{flex:1;height:4px;border-radius:4px;background:var(--line)}.steps i.on{background:linear-gradient(90deg,var(--sig),var(--uv))}
+.center{max-width:440px;margin:0 auto;padding:8vh 20px}
+/* app */
+.top{display:flex;justify-content:space-between;align-items:center;max-width:1040px;margin:0 auto;padding:18px 24px}
+.pill{display:flex;align-items:center;gap:8px;font-size:13px;padding:7px 14px;border-radius:99px;border:1px solid var(--line);background:rgba(255,255,255,.04)}
+.pill i{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 0 rgba(56,232,168,.7);animation:ping 2s infinite}
+@keyframes ping{70%{box-shadow:0 0 0 9px rgba(56,232,168,0)}100%{box-shadow:0 0 0 0 rgba(56,232,168,0)}}
+.nav{display:flex;gap:6px;max-width:1040px;margin:0 auto;padding:0 24px 8px}
+.nav button{border:0;background:none;padding:9px 16px;border-radius:99px;cursor:pointer;color:var(--mut);font-weight:600}
+.nav button.on{background:rgba(255,255,255,.09);color:var(--ink)}
+.wrap{max-width:1040px;margin:0 auto;padding:12px 24px 80px}
+.grid{display:grid;grid-template-columns:1.15fr .85fr;gap:20px}
+.bal{padding:28px;position:relative;overflow:hidden}
+.bal.pulse:after{content:"";position:absolute;inset:0;border-radius:22px;box-shadow:inset 0 0 0 2px var(--sig),inset 0 0 60px rgba(62,232,255,.35);animation:flash 1.4s ease-out forwards;pointer-events:none}
+@keyframes flash{to{opacity:0}}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.chip{font-size:12px;padding:4px 10px;border-radius:99px;background:rgba(56,232,168,.12);color:var(--ok)}
+.big{font-size:clamp(36px,6vw,54px);font-weight:700;margin:10px 0 4px;font-variant-numeric:tabular-nums}
+.acct{font-size:13px;color:var(--mut);display:flex;gap:12px;align-items:center}
+.acct button{background:none;border:1px solid var(--line);color:var(--sig);border-radius:8px;padding:2px 10px;cursor:pointer;font-size:12px}
+.spark{width:100%;height:84px;margin:18px 0 6px}
+.actions{display:flex;gap:10px;flex-wrap:wrap}.actions .btn{flex:1;min-width:110px}
+h3{font-size:16px;margin-bottom:12px}
+.list{padding:22px}.tx{display:flex;gap:12px;align-items:center;padding:11px 0;border-top:1px solid var(--line)}.tx:first-of-type{border-top:0}
+.ico{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:rgba(255,255,255,.06);flex:none}
+.tx .m{flex:1;min-width:0}.tx .m b{font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tx small{color:var(--mut)}
+.amt{font-weight:600;font-variant-numeric:tabular-nums}.in{color:var(--ok)}.out{color:var(--ink)}
+.empty{color:var(--mut);padding:18px 0}
+.prof{display:grid;grid-template-columns:1fr 1fr;gap:20px}.prof .glass{padding:24px}
+.av{width:64px;height:64px;border-radius:20px;display:grid;place-items:center;font-weight:700;font-size:22px;color:#04101a;background:linear-gradient(135deg,var(--sig),var(--uv));margin-bottom:12px}
+dl{display:grid;grid-template-columns:auto 1fr;gap:10px 18px;font-size:14px}dt{color:var(--mut)}dd{text-align:right;word-break:break-all}
+/* modal + pin */
+.ov{position:fixed;inset:0;background:rgba(3,5,16,.7);backdrop-filter:blur(6px);display:grid;place-items:center;z-index:20;padding:16px}
+.sheet{width:100%;max-width:400px;padding:26px;background:#0d1130;border:1px solid var(--line);border-radius:24px;animation:pop .22s ease-out;text-align:center}
+.sheet form,.sheet .left{text-align:left}
+@keyframes pop{from{transform:translateY(18px);opacity:0}}
+.dots{display:flex;justify-content:center;gap:12px;margin:22px 0}.dots i{width:14px;height:14px;border-radius:50%;border:2px solid var(--mut);transition:.15s}.dots i.on{background:var(--sig);border-color:var(--sig);box-shadow:0 0 14px var(--sig)}
+.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:260px;margin:0 auto}
+.keys button{height:56px;border-radius:16px;border:1px solid var(--line);background:rgba(255,255,255,.05);font-size:20px;cursor:pointer;transition:.12s}
+.keys button:hover{border-color:var(--sig)}.keys button:active{background:rgba(62,232,255,.2)}
+.shake{animation:shake .4s}@keyframes shake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.ok svg{width:84px;height:84px}.ok path{stroke:var(--ok);stroke-width:5;fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:60;stroke-dashoffset:60;animation:draw .5s .15s forwards}.ok circle{stroke:var(--ok);stroke-width:3;fill:none;opacity:.4}
+@keyframes draw{to{stroke-dashoffset:0}}
+.toasts{position:fixed;top:16px;right:16px;display:grid;gap:10px;z-index:30;max-width:calc(100vw - 32px)}
+.toast{padding:14px 18px;border-radius:16px;background:#101538;border:1px solid var(--sig);box-shadow:0 0 30px rgba(62,232,255,.25);animation:pop .25s}
+.toast.bad{border-color:var(--bad);box-shadow:none}
+.note{font-size:12.5px;color:var(--mut);border:1px dashed var(--line);border-radius:14px;padding:12px 14px;margin-top:16px}
+@media(max-width:760px){
+      .auth{grid-template-columns:minmax(0,1fr);gap:24px;padding:28px 18px;align-content:start}
+      .auth .card{max-width:520px;justify-self:center}
+      .hero h1{font-size:clamp(32px,8vw,46px);margin:18px 0 12px}
+      .ticker{margin-top:20px}
+      .grid,.prof{grid-template-columns:minmax(0,1fr)}
+    }
+    @media(max-height:720px) and (min-width:761px){
+      .auth{align-items:start;padding-top:28px;padding-bottom:28px}
+      .hero h1{margin-top:18px}
+      .ticker{margin-top:20px}
+    }
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app"></div><div class="toasts" id="toasts" aria-live="polite"></div><div id="modal"></div>
+<script>
+/* NovaBank web client connected to the local Go API.
+   This is a demonstration application, not a real banking service. */
+const $=(s,r=document)=>r.querySelector(s), app=$('#app');
+const fmt=c=>new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR'}).format(c/100);
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const hash=async s=>{const b=new TextEncoder().encode('nb:'+s);if(!crypto.subtle)return btoa(String.fromCharCode(...b));return [...new Uint8Array(await crypto.subtle.digest('SHA-256',b))].map(x=>x.toString(16).padStart(2,'0')).join('')};
+const ago=ts=>new Date(ts).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+
+/* ---------- real backend API ---------- */
+const API_BASE = 'http://localhost:8080';
+const bc = new BroadcastChannel('novabank');
+
+let currentUser = null;
+let currentAccount = null;
+let currentToken = sessionStorage.getItem('nb_token') || '';
+
+async function request(path, options = {}) {
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(currentToken ? { Authorization: `Bearer ${currentToken}` } : {}),
+    ...options.headers
+  };
+
+  const response = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers
+  });
+
+  if (response.status === 401) {
+    currentToken = '';
+    sessionStorage.removeItem('nb_token');
+  }
+
+  if (response.status === 204) return null;
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    const error = new Error(data.error || data.message || `Request failed (${response.status})`);
+    error.status = response.status;
+    throw error;
+  }
+
+  return data;
+}
+
+function normalizeUser(user, account) {
+  if (!user) return null;
+
+  return {
+    ...user,
+    email: user.email,
+    prof: user.profile_complete
+      ? {
+          name: user.full_name,
+          handle: user.handle,
+          phone: user.phone
+        }
+      : null,
+    pin: user.has_pin ? true : null,
+    bal: account?.balance ?? 0,
+    acct: account?.account_number ?? '',
+    accountId: account?.id ?? '',
+    created: new Date(user.created_at).getTime()
+  };
+}
+
+const Api = {
+  async seed() {
+    if (!currentToken) {
+      currentUser = null;
+      currentAccount = null;
+      return;
+    }
+
+    try {
+      await this.loadMe();
+    } catch {
+      currentToken = '';
+      sessionStorage.removeItem('nb_token');
+      currentUser = null;
+      currentAccount = null;
+    }
+  },
+
+  async loadMe() {
+    const data = await request('/me');
+    currentUser = data.user;
+    currentAccount = data.account;
+    return normalizeUser(currentUser, currentAccount);
+  },
+
+  me() {
+    if (!currentUser) return null;
+    return normalizeUser(currentUser, currentAccount);
+  },
+
+  async register(email, password) {
+    const data = await request('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ email, password })
+    });
+
+    currentToken = data.token;
+    sessionStorage.setItem('nb_token', currentToken);
+    await this.loadMe();
+  },
+
+  async login(email, password) {
+    const data = await request('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password })
+    });
+
+    currentToken = data.token;
+    sessionStorage.setItem('nb_token', currentToken);
+    await this.loadMe();
+  },
+
+  async setProfile(profile) {
+    const data = await request('/me/profile', {
+      method: 'PUT',
+      body: JSON.stringify({
+        full_name: profile.name,
+        handle: profile.handle,
+        phone: profile.phone
+      })
+    });
+
+    currentAccount = data.account;
+    await this.loadMe();
+  },
+
+  async setPin(pin) {
+    await request('/me/pin', {
+      method: 'PUT',
+      body: JSON.stringify({ pin })
+    });
+
+    await this.loadMe();
+  },
+
+  async changePin(oldPin, newPin) {
+    await request('/me/pin', {
+      method: 'PUT',
+      body: JSON.stringify({
+        pin: newPin,
+        current_pin: oldPin
+      })
+    });
+
+    await this.loadMe();
+  },
+
+  async lookup(handle) {
+    try {
+      const data = await request(
+        `/handles/${encodeURIComponent(handle)}`
+      );
+
+      return { name: data.full_name };
+    } catch (error) {
+      if (error.status === 404) return null;
+      throw error;
+    }
+  },
+
+  async _move(kind, amount, pin, to, note) {
+    const user = this.me();
+
+    if (!user?.accountId) {
+      throw new Error('Your account is not ready yet.');
+    }
+
+    let data;
+
+    if (kind === 'dep' || kind === 'wd') {
+      data = await request(
+        `/accounts/${user.accountId}/${kind === 'dep' ? 'deposit' : 'withdraw'}`,
+        {
+          method: 'POST',
+          body: JSON.stringify({ amount, pin })
+        }
+      );
+    } else {
+      data = await request('/transfers', {
+        method: 'POST',
+        body: JSON.stringify({
+          to_handle: to,
+          amount,
+          pin,
+          note
+        })
+      });
+    }
+
+    await this.loadMe();
+    bc.postMessage({ kind: 'refresh' });
+
+    return data;
+  },
+
+  deposit(amount, pin) {
+    return this._move('dep', amount, pin);
+  },
+
+  withdraw(amount, pin) {
+    return this._move('wd', amount, pin);
+  },
+
+  send(amount, pin, to, note) {
+    return this._move('xfer', amount, pin, to, note);
+  },
+
+  async history() {
+    const user = this.me();
+    if (!user?.accountId) return [];
+
+    const data = await request(
+      `/accounts/${encodeURIComponent(user.accountId)}/transactions?limit=200&offset=0`
+    );
+    const transactions = Array.isArray(data)
+      ? data
+      : (data.transactions || data.items || []);
+
+    return transactions.map(t => {
+      const type = String(t.type || t.transaction_type || '').toLowerCase();
+      const isDeposit = type === 'deposit' || type === 'credit';
+      const isWithdrawal = type === 'withdrawal' || type === 'withdraw' || type === 'debit';
+      const isIncoming = t.direction === 'incoming' || t.direction === 'in' ||
+        type === 'transfer_in' || type === 'incoming_transfer';
+      const isOutgoing = t.direction === 'outgoing' || t.direction === 'out' ||
+        type === 'transfer_out' || type === 'outgoing_transfer';
+      const kind = isDeposit ? 'dep' : isWithdrawal ? 'wd' : 'xfer';
+      const counterpartyHandle = t.counterparty_handle || t.counterpartyHandle || '';
+      return {
+        id: t.id,
+        k: kind,
+        f: isIncoming ? counterpartyHandle : '',
+        t: isOutgoing ? counterpartyHandle : '',
+        counterparty: counterpartyHandle,
+        counterpartyName: t.counterparty_name || t.counterpartyName || '',
+        incoming: Boolean(isIncoming),
+        outgoing: Boolean(isOutgoing),
+        a: Number(t.amount ?? 0),
+        balanceAfter: Number(t.balance_after ?? t.balanceAfter ?? NaN),
+        n: t.note || '',
+        ts: new Date(t.created_at || t.createdAt || Date.now()).getTime()
+      };
+    });
+  },
+
+  name(handle) {
+    return handle || 'Unknown';
+  }
+}
+/* ---------- ui helpers ---------- */
+const S={view:'home',shown:0,devs:{}};
+function toast(html,bad){const t=document.createElement('div');t.className='toast'+(bad?' bad':'');t.innerHTML=html;$('#toasts').append(t);setTimeout(()=>t.remove(),5000)}
+function openModal(html){$('#modal').innerHTML=`<div class="ov" data-act="ovx"><div class="sheet" role="dialog" aria-modal="true">${html}</div></div>`;return $('#modal .sheet')}
+const closeModal=()=>$('#modal').innerHTML='';
+function pad(host,{title,sub,onDone,len=6}){
+  let v='',busy=false;
+  host.innerHTML=`<h3>${title}</h3><p class="mut">${sub||''}</p><div class="dots">${'<i></i>'.repeat(len)}</div><div class="keys">${[1,2,3,4,5,6,7,8,9,'',0,'⌫'].map(k=>k===''?'<span></span>':`<button type="button" data-k="${k}" aria-label="${k==='⌫'?'Delete':k}">${k}</button>`).join('')}</div><p class="err" role="alert"></p>`;
+  const dots=[...host.querySelectorAll('.dots i')],err=$('.err',host),draw=()=>dots.forEach((d,i)=>d.classList.toggle('on',i<v.length));
+  const press=async k=>{if(busy)return;if(k==='⌫')v=v.slice(0,-1);else if(v.length<len)v+=k;draw();err.textContent='';
+    if(v.length===len){const x=v;busy=true;try{await onDone(x)}catch(e){err.textContent=e.message;host.classList.add('shake');setTimeout(()=>host.classList.remove('shake'),400)}v='';busy=false;draw()}};
+  host.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>press(b.dataset.k));
+  const kd=e=>{if(!host.isConnected)return document.removeEventListener('keydown',kd);if(/^\d$/.test(e.key))press(e.key);else if(e.key==='Backspace')press('⌫')};
+  if(host._kd)document.removeEventListener('keydown',host._kd);host._kd=kd;document.addEventListener('keydown',kd);
+}
+const okView=(m,msg)=>{if(m._kd)document.removeEventListener('keydown',m._kd);m.innerHTML=`<div class="ok"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44"/><path d="M30 52l14 14 27-30"/></svg><h3>${msg}</h3></div>`;setTimeout(closeModal,1500)};
+
+/* ---------- render ---------- */
+async function render() {
+  let u = null;
+  try {
+    u = await Api.loadMe();
+  } catch (error) {
+    // A missing/expired session means show the login screen.
+    if (!currentToken || error.status === 401) {
+      authView('login');
+      return;
+    }
+    authView('login', error.message || 'Could not connect to NovaBank. Check that the API is running.');
+    return;
+  }
+
+  if (!u) {
+    authView('login');
+    return;
+  }
+  if (!u.prof) {
+    onboard(1);
+    return;
+  }
+  if (!u.pin) {
+    onboard(2);
+    return;
+  }
+
+  try {
+    await appView(u);
+  } catch (error) {
+    // Keep the signed-in user on the dashboard even if activity history is unavailable.
+    console.error('Dashboard render error:', error);
+    app.innerHTML = `<main class="center"><div class="logo" style="margin-bottom:22px">⚡ NovaBank</div><div class="glass card"><h3>Welcome back, ${esc(u.prof.name)}.</h3><p class="mut" style="margin:12px 0 18px">Your account is signed in, but some dashboard data could not be loaded.</p><p class="err" role="alert">${esc(error.message || 'Unable to load dashboard data.')}</p><button class="btn" id="retry-dashboard" style="width:100%">Retry dashboard</button><button class="btn ghost" id="logout-retry" style="width:100%;margin-top:10px">Log out</button></div></main>`;
+    $('#retry-dashboard').onclick = () => render();
+    $('#logout-retry').onclick = acts.logout;
+  }
+}
+function authView(mode,e=''){
+  const items=['Transfer settled in 0.12s','Backend account sync','Ledger balanced','PIN checked on every payment','API connection available'].map(t=>`<span><b>●</b> ${t}</span>`).join('');
+  app.innerHTML=`<main class="auth"><section class="hero"><div class="logo">⚡ NovaBank</div><h1>Money that lands <span>the instant it’s sent.</span></h1><p class="mut">Open NovaBank on your phone and your laptop. When a friend sends you money, both screens light up together.</p><div class="ticker" aria-hidden="true"><div>${items}${items}</div></div><p class="mut" style="font-size:12px;margin-top:8px">Simulated status feed</p></section>
+  <section class="glass card"><div class="tabs"><button data-act="mode" data-m="login" class="${mode==='login'?'on':''}">Log in</button><button data-act="mode" data-m="signup" class="${mode==='signup'?'on':''}">Create account</button></div>
+  <form id="af" data-mode="${mode}"><label>Email<input name="email" type="email" autocomplete="email" required></label><label>Password<input name="pw" type="password" minlength="8" autocomplete="${mode==='login'?'current-password':'new-password'}" required></label><p class="err" role="alert">${esc(e)}</p><button class="btn" style="width:100%">${mode==='login'?'Log in':'Create account'}</button></form>
+  <p class="note">Connected to the local NovaBank API. Keep the backend running at <span class="mono">localhost:8080</span>. This is a demonstration app, not a real bank.</p></section></main>`}
+function onboard(step){
+  app.innerHTML=`<main class="center"><div class="logo" style="margin-bottom:22px">⚡ NovaBank</div><div class="glass card"><div class="steps"><i class="on"></i><i class="${step>1?'on':''}"></i></div><div id="ob"></div></div></main>`;
+  const box=$('#ob');
+  if(step===1){box.innerHTML=`<h3>Set up your profile</h3><p class="mut" style="margin-bottom:16px">Friends will find you by your handle.</p><form id="pf"><label>Full name<input name="name" maxlength="40" required autocomplete="name"></label><label>Handle<div class="pre"><span>@</span><input name="handle" pattern="[a-z0-9_]{3,16}" title="3–16 letters, numbers or underscores" required autocomplete="off"></div></label><label>Mobile number<input name="phone" pattern="[0-9]{10}" title="10 digits" inputmode="numeric" required autocomplete="tel"></label><p class="err" role="alert"></p><button class="btn" style="width:100%">Save and continue</button></form>`}
+  else{let first='';const ask=()=>pad(box,{title:first?'Confirm your PIN':'Create a 6-digit PIN',sub:first?'Enter it once more.':'You’ll enter it for every deposit, withdrawal and transfer.',onDone:async p=>{
+      if(!first){first=p;ask();return}
+      if(p!==first){first='';ask();toast('PINs didn’t match. Start again.',1);return}
+      await Api.setPin(p);
+      closeModal();
+      toast('PIN saved. Welcome to NovaBank.');
+      await render();
+    }});ask()}}
+function spark(h,u){
+  const balances = h.filter(t => Number.isFinite(t.balanceAfter))
+    .sort((a,b) => a.ts-b.ts).map(t => t.balanceAfter).slice(-24);
+  const v = balances.length ? balances : [u.bal, u.bal];
+  if (v.length < 2) v.unshift(v[0] ?? u.bal);
+  const mx = Math.max(...v), mn = Math.min(...v), r = mx-mn || 1;
+  const xy = v.map((y,i)=>[i/(v.length-1)*300,70-((y-mn)/r)*58]);
+  const line = xy.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+  return `<svg class="spark" viewBox="0 0 300 80" preserveAspectRatio="none" aria-label="Balance trend"><defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="#3ee8ff"/><stop offset="1" stop-color="#8a6bff"/></linearGradient><linearGradient id="f" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3ee8ff" stop-opacity=".25"/><stop offset="1" stop-color="#3ee8ff" stop-opacity="0"/></linearGradient></defs><path d="${line} L300 80 L0 80Z" fill="url(#f)"/><path d="${line}" fill="none" stroke="url(#g)" stroke-width="2.5" vector-effect="non-scaling-stroke"/><circle cx="${xy.at(-1)[0]}" cy="${xy.at(-1)[1]}" r="4" fill="#3ee8ff"/></svg>`;
+}
+function rows(h,me,n){
+  if(!h.length)return`<p class="empty">No activity yet. Make a deposit to get started.</p>`;
+  return h.slice(0,n).map(t=>{
+    const inn = t.k === 'dep' || t.incoming || (t.t === me && t.f !== me);
+    const k = t.k;
+    const other = t.counterpartyName || Api.name(t.counterparty || (inn ? t.f : t.t));
+    const title = k === 'dep' ? 'Deposit'
+      : k === 'wd' ? 'Withdrawal'
+      : inn ? `From ${esc(other)}` : `To ${esc(other)}`;
+    return `<div class="tx"><div class="ico">${k==='dep'?'⬇':k==='wd'?'⬆':inn?'↙':'↗'}</div><div class="m"><b>${title}</b><small>${ago(t.ts)}${t.n?' · '+esc(t.n):''}</small></div><span class="amt ${inn?'in':'out'}">${inn?'+':'−'}${fmt(t.a)}</span></div>`;
+  }).join('');
+}
+async function appView(u) {
+  let h = [];
+  try {
+    h = await Api.history();
+  } catch (error) {
+    console.error('Transaction history could not be loaded:', error);
+    toast('Dashboard opened, but transaction history could not be loaded.', true);
+  }
+  const me = u.prof.handle;
+  let body = '';
+  if(S.view==='home')body=`<section class="grid"><div class="glass bal" id="balcard"><div class="row"><span class="mut">Available balance</span><span class="chip">Savings, active</span></div><div class="big" id="bal">${fmt(S.shown)}</div><div class="acct"><span class="mono">•••• ${u.acct.slice(-4)}</span><button data-act="copy">Copy account number</button></div>${spark(h,u)}<div class="actions"><button class="btn" data-act="tx" data-k="xfer">Send money</button><button class="btn ghost" data-act="tx" data-k="dep">Deposit</button><button class="btn ghost" data-act="tx" data-k="wd">Withdraw</button></div></div><div class="glass list"><h3>Live activity</h3>${rows(h,me,6)}</div></section>`;
+  else if(S.view==='act')body=`<div class="glass list"><h3>All activity</h3>${rows(h,me,200)}</div>`;
+  else body=`<section class="prof"><div class="glass"><div class="av">${esc(u.prof.name.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase())}</div><h3>Your profile</h3><form id="ef"><label>Full name<input name="name" value="${esc(u.prof.name)}" maxlength="40" required></label><label>Mobile number<input name="phone" value="${esc(u.prof.phone)}" pattern="[0-9]{10}" required></label><p class="err" role="alert"></p><button class="btn">Save changes</button></form></div>
+    <div class="glass"><h3>Account details</h3><dl><dt>Account number</dt><dd class="mono">${u.acct}</dd><dt>Handle</dt><dd>@${esc(me)}</dd><dt>Email</dt><dd>${esc(u.email)}</dd><dt>Type</dt><dd>Savings</dd><dt>Opened</dt><dd>${ago(u.created)}</dd></dl>
+    <div class="actions" style="margin-top:22px"><button class="btn ghost" data-act="chpin">Change PIN</button><button class="btn ghost" data-act="logout">Log out</button></div></div></section>`;
+  app.innerHTML=`<header class="top"><div class="logo">⚡ NovaBank</div><div class="pill"><i></i><span id="devs"></span></div></header><nav class="nav">${[['home','Home'],['act','Activity'],['prof','Profile']].map(([k,l])=>`<button data-act="view" data-v="${k}" class="${S.view===k?'on':''}">${l}</button>`).join('')}</nav><main class="wrap">${body}</main>`;
+  presence();
+  const el=$('#bal');if(el){const from=S.shown,to=u.bal,t0=performance.now();S.shown=to;
+    (function f(t){const p=Math.min((t-t0)/700,1),e=1-Math.pow(1-p,3);el.textContent=fmt(Math.round(from+(to-from)*e));if(p<1)requestAnimationFrame(f)})(t0)}}
+function openTx(kind){
+  const L={dep:'Deposit',wd:'Withdraw',xfer:'Send money'}[kind],me=Api.me().prof.handle;
+  const m=openModal(`<h3>${L}</h3><form class="left" id="tf">${kind==='xfer'?'<label>Send to<div class="pre"><span>@</span><input name="to" placeholder="nova" autocomplete="off" required></div></label>':''}<label>Amount<div class="pre"><span>₹</span><input name="amt" type="number" step="0.01" min="0.01" inputmode="decimal" required></div></label>${kind==='xfer'?'<label>Note (optional)<input name="note" maxlength="60" placeholder="Dinner"></label>':''}<p class="err" role="alert"></p><button class="btn" style="width:100%">Continue</button></form>`);
+  $('input',m).focus();
+  $('#tf',m).onsubmit = async e => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const amt = Math.round(parseFloat(f.get('amt')) * 100);
+    const to = String(f.get('to') || '').trim().replace(/^@/, '').toLowerCase();
+    const note = String(f.get('note') || '').trim();
+    const er = $('.err', m);
+    if (!(amt > 0) || !Number.isSafeInteger(amt)) {
+      er.textContent = 'Enter a valid amount above zero.';
+      return;
+    }
+    if (kind !== 'dep' && amt > Number(Api.me()?.bal ?? 0)) {
+      er.textContent = 'That is more than your balance.';
+      return;
+    }
+
+    let recipient = null;
+    if (kind === 'xfer') {
+      if (!to) { er.textContent = 'Enter the recipient handle.'; return; }
+      if (to === me) { er.textContent = 'You cannot send money to yourself.'; return; }
+      try {
+        recipient = await Api.lookup(to);
+      } catch (error) {
+        er.textContent = error.message || 'Could not look up that handle.';
+        return;
+      }
+      if (!recipient) { er.textContent = `No one has the handle @${to}.`; return; }
+    }
+
+    const who = kind === 'xfer' ? ` to ${recipient.name || '@' + to}` : '';
+    pad(m, {
+      title: 'Enter your PIN',
+      sub: `Confirm ${L.toLowerCase()} of ${fmt(amt)}${esc(who)}`,
+      onDone: async pin => {
+        if (kind === 'dep') await Api.deposit(amt, pin);
+        else if (kind === 'wd') await Api.withdraw(amt, pin);
+        else await Api.send(amt, pin, to, note);
+        okView(m, kind === 'xfer' ? `${fmt(amt)} sent` : kind === 'dep' ? `${fmt(amt)} added` : `${fmt(amt)} withdrawn`);
+        await refresh();
+      }
+    });
+  };
+}
+async function refresh(){
+  if (!Api.me()?.pin) return;
+  try {
+    const user = await Api.loadMe();
+    await appView(user);
+  } catch (error) {
+    toast(esc(error.message || 'Could not refresh the dashboard.'), true);
+  }
+}
+/* ---------- live: presence + incoming transfers ---------- */
+const TAB=crypto.randomUUID();
+function presence(){const me=Api.me()?.prof?.handle,n=Object.values(S.devs).filter(d=>d.h===me&&Date.now()-d.t<7000).length+1,el=$('#devs');if(el)el.textContent=`Live, ${n} device${n>1?'s':''} connected`}
+setInterval(()=>{const me=Api.me()?.prof?.handle;if(me)bc.postMessage({kind:'hb',id:TAB,h:me});presence()},2500);
+bc.onmessage=ev=>{const m=ev.data,u=Api.me();
+  if(m.kind==='hb'){S.devs[m.id]={h:m.h,t:Date.now()};return presence()}
+  if(m.kind==='refresh'){refresh();return}
+  if(m.kind==='tx'&&u?.prof&&m.users.includes(u.prof.handle)){
+    refresh();
+    if(m.tx.t===u.prof.handle&&m.tx.f!==u.prof.handle){toast(`<b>${fmt(m.tx.a)}</b> arrived from ${esc(Api.name(m.tx.f))}${m.tx.n?'<br><small class="mut">“'+esc(m.tx.n)+'”</small>':''}`);const c=$('#balcard');if(c){c.classList.remove('pulse');void c.offsetWidth;c.classList.add('pulse')}}}};
+/* ---------- events ---------- */
+const acts={
+  mode:a=>authView(a.dataset.m),
+  view:a=>{S.view=a.dataset.v;refresh()},
+  tx:a=>openTx(a.dataset.k),
+  copy:()=>{navigator.clipboard?.writeText(Api.me().acct);toast('Account number copied.')},
+  logout: () => {
+  currentToken = '';
+  currentUser = null;
+  currentAccount = null;
+  sessionStorage.removeItem('nb_token');
+  S.shown = 0;
+  S.view = 'home';
+  render();
+},
+  ovx:(a,e)=>{if(e.target===a)closeModal()},
+  chpin:()=>{const m=openModal('');let old='',nw='';const s1=()=>pad(m,{title:'Enter your current PIN',onDone:async p=>{old=p;s2()}}),
+    s2=()=>pad(m,{title:'Choose a new PIN',onDone:async p=>{nw=p;s3()}}),
+    s3=()=>pad(m,{title:'Confirm your new PIN',onDone:async p=>{if(p!==nw){s2();throw Error('PINs didn’t match.')}try{await Api.changePin(old,p)}catch(e){s1();throw e}okView(m,'PIN updated')}});s1()}
+};
+document.addEventListener('click',e=>{const a=e.target.closest('[data-act]');if(a)acts[a.dataset.act]?.(a,e)});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+document.addEventListener('submit',async e=>{e.preventDefault();const f=e.target,er=$('.err',f),v=Object.fromEntries(new FormData(f));
+  try{
+    if(f.id==='af'){
+      if(f.dataset.mode==='login') await Api.login(v.email, v.pw);
+      else await Api.register(v.email, v.pw);
+      await render();
+    }
+    else if(f.id==='pf'){
+      await Api.setProfile({name:v.name.trim(),handle:v.handle.trim().toLowerCase(),phone:v.phone});
+      await render();
+    }
+    else if(f.id==='ef'){
+      const p=Api.me().prof;
+      await Api.setProfile({...p,name:v.name.trim(),phone:v.phone});
+      toast('Profile saved.');
+      await refresh();
+    }
+  }catch(x){
+    if(er) er.textContent = x.message || 'Request failed. Check the backend and try again.';
+    else toast(esc(x.message || 'Request failed. Check the backend and try again.'), true);
+  }});
+Api.seed().then(render);
+</script>
+</body>
+</html>
